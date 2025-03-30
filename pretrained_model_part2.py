@@ -19,28 +19,30 @@ import json
 # for Part 3 you have the option of using a predefined, pretrained network to
 # finetune.
 ################################################################################
-# class SimpleCNN(nn.Module):
-#     def __init__(self):
-#         super(SimpleCNN, self).__init__()
-#         # TODO - define the layers of the network you will use
-#         self.conv1 = nn.Conv2d(3,32, kernel_size=3, padding=1)
-#         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-#         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-#         self.pool = nn.MaxPool2d(2,2)
-#         self.fc1 = nn.Linear(128*4*4, 512)
-#         self.fc2 = nn.Linear(512, 100)
-#         self.dropout = nn.Dropout(0.2)
+class pretrainResNetPart2(nn.Module):
+    def __init__(self):
+        super(pretrainResNetPart2, self).__init__()
+        # TODO - define the layers of the network you will use
+        self.model = models.resnet50(pretrained=False)
+        self.conv1 = nn.Conv2d(3,64, kernel_size=3, padding=1)
+        self.model.fc = nn.Linear(2048, 100)
+        self.dropout = nn.Dropout(0.2)
     
-#     def forward(self, x):
-#         # TODO - define the forward pass of the network you will use
-#         x = self.pool(F.relu(self.conv1(x)))
-#         x = self.pool(F.relu(self.conv2(x)))
-#         x = self.pool(F.relu(self.conv3(x)))
-#         x = x.view(-1, 128 * 4 * 4)
-#         x = F.relu(self.fc1(x))
-#         x = self.dropout(x)
-#         x = self.fc2(x)
-#         return x
+    def forward(self, x):
+        # TODO - define the forward pass of the network you will use
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+        x = self.model.layer4(x)
+        x = self.model.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.dropout(x)
+        x = self.model.fc(x)
+        return x
 
 ################################################################################
 # Define a one epoch training function
@@ -133,9 +135,9 @@ def main():
 
     CONFIG = {
         "model": "Resnet50",   # Change name when using a different model
-        "batch_size": 64, # run batch size finder to find optimal batch size
+        "batch_size": 128, # run batch size finder to find optimal batch size
         "learning_rate": 0.01,
-        "epochs": 30,  # Train for longer in a real scenario
+        "epochs": 100,  # Train for longer in a real scenario
         "num_workers": 4, # Adjust based on your system
         "device": "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu",
         "data_dir": "./data",  # Make sure this directory exists
@@ -157,7 +159,7 @@ def main():
         transforms.RandomCrop(32, padding=4),
         transforms.RandomRotation(15),
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # use resnet50 param
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)), # use CIFAR100 param
     ])
 
     ###############
@@ -167,7 +169,7 @@ def main():
     # Validation and test transforms (NO augmentation)
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])  ### TODO -- BEGIN SOLUTION
 
     ############################################################################

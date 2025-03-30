@@ -10,6 +10,7 @@ import pandas as pd
 from tqdm.auto import tqdm  # For progress bars
 import wandb
 import json
+from utils import find_optimal_batch_size
 
 ################################################################################
 # Model Definition (Simple Example - You need to complete)
@@ -22,23 +23,47 @@ class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
         # TODO - define the layers of the network you will use
-        self.conv1 = nn.Conv2d(3,32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2,2)
-        self.fc1 = nn.Linear(128*4*4, 512)
-        self.fc2 = nn.Linear(512, 100)
-        self.dropout = nn.Dropout(0.2)
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.2)
+        )
+
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.2)
+        )
+
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(128, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout(0.2)
+        )
+
+        self.fc = nn.Sequential(
+            nn.Linear(512 * 4 * 4, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+
+            nn.Linear(1024, 100)
+        )
+
+
     
     def forward(self, x):
         # TODO - define the forward pass of the network you will use
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.reshape(-1, 128*4*4)
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
         return x
 
 ################################################################################
@@ -132,8 +157,8 @@ def main():
 
     CONFIG = {
         "model": "SimpleCNN",   # Change name when using a different model
-        "batch_size": 64, # run batch size finder to find optimal batch size
-        "learning_rate": 0.001,
+        "batch_size": 128, # run batch size finder to find optimal batch size
+        "learning_rate": 0.01,
         "epochs": 100,  # Train for longer in a real scenario
         "num_workers": 4, # Adjust based on your system
         "device": "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu",
@@ -214,7 +239,7 @@ def main():
     ############################################################################
     criterion = nn.CrossEntropyLoss()   ### TODO -- define loss criterion
     optimizer = optim.SGD(model.parameters(), lr=CONFIG["learning_rate"], momentum=0.9, weight_decay=5e-4)   ### TODO -- define optimizer
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[30, 60, 90], gamma=0.1)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])
 
 
     # Initialize wandb

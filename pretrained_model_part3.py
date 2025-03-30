@@ -155,7 +155,6 @@ def main():
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
-        transforms.RandomRotation(15),
         transforms.ToTensor(),
         transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)), # use CIFAR100 param
     ])
