@@ -135,7 +135,7 @@ def main():
         "model": "Resnet50",   # Change name when using a different model
         "batch_size": 64, # run batch size finder to find optimal batch size
         "learning_rate": 0.001,
-        "epochs": 90,  # Train for longer in a real scenario
+        "epochs": 50,  # Train for longer in a real scenario
         "num_workers": 4, # Adjust based on your system
         "device": "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu",
         "data_dir": "./data",  # Make sure this directory exists
@@ -157,7 +157,7 @@ def main():
         transforms.RandomCrop(32, padding=4),
         transforms.RandomRotation(15),
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # use resnet50 param
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)), # use CIFAR100 param
     ])
 
     ###############
@@ -167,7 +167,7 @@ def main():
     # Validation and test transforms (NO augmentation)
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])  ### TODO -- BEGIN SOLUTION
 
     ############################################################################
@@ -219,7 +219,7 @@ def main():
     ############################################################################
     criterion = nn.CrossEntropyLoss()   ### TODO -- define loss criterion
     optimizer = optim.SGD(model.parameters(), lr=CONFIG["learning_rate"], momentum=0.9, weight_decay=1e-4)   ### TODO -- define optimizer
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[30, 60, 90], gamma=0.1)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])
 
 
     # Initialize wandb

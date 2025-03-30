@@ -35,7 +35,7 @@ class SimpleCNN(nn.Module):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(-1, 128 * 4 * 4)
+        x = x.reshape(-1, 128*4*4)
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
@@ -131,7 +131,7 @@ def main():
 
 
     CONFIG = {
-        "model": "MyModel",   # Change name when using a different model
+        "model": "SimpleCNN",   # Change name when using a different model
         "batch_size": 64, # run batch size finder to find optimal batch size
         "learning_rate": 0.001,
         "epochs": 100,  # Train for longer in a real scenario
@@ -155,7 +155,7 @@ def main():
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
         transforms.ToTensor(),
-        transforms.Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762)), # cifar10
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)), # cifar100
     ])
 
     ###############
@@ -165,7 +165,7 @@ def main():
     # Validation and test transforms (NO augmentation)
     transform_test = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762)),
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])  ### TODO -- BEGIN SOLUTION
 
     ############################################################################
