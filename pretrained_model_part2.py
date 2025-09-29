@@ -196,9 +196,9 @@ def main():
     #   Instantiate model and move to target device
     ############################################################################
     model = models.resnet50(pretrained=True)   # instantiate your model ### TODO
-    # 修改最後一層
+    # modified the last layer
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 100)  # CIFAR-100 有 100 個類別
+    model.fc = nn.Linear(num_ftrs, 100)
     model = model.to(CONFIG["device"])   # move it to target device
 
     print("\nModel summary:")
